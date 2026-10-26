@@ -39,15 +39,18 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0e1a22",
-  colorScheme: "light",
+  colorScheme: "dark",
 };
 
 /**
- * Runs before first paint. When motion is allowed it marks the document so
- * hero elements start hidden for the load sequence; reduced-motion visitors
- * never get the class, so nothing is ever hidden for them.
+ * Runs before first paint and picks the experience, so nothing flashes or
+ * jumps when JavaScript takes over:
+ * - motion-ready: motion allowed. Reduced-motion visitors never get it, so
+ *   nothing is ever hidden for them.
+ * - story-scene: desktop width, so the animated sticky story is used.
+ * - intro-pending: first visit this session, no deep link. Plays the intro.
  */
-const motionGate = `try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('motion-ready')}}catch(e){}`;
+const motionGate = `try{var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('motion-ready');if(innerWidth>=900){d.classList.add('story-scene');var seen=false;try{seen=sessionStorage.getItem('regulon-intro-seen')==='1'}catch(e){}if(!seen&&!location.hash){d.classList.add('intro-pending')}}}}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

@@ -26,7 +26,7 @@ export function SiteFooter() {
   );
 
   return (
-    <footer ref={root} data-theme="dark" className="bg-ink px-[var(--gutter)] pt-20 text-paper">
+    <footer ref={root} data-theme="dark" className="bg-gradient-to-b from-transparent to-ink px-[var(--gutter)] pt-20 text-paper">
       <div className="mx-auto max-w-[1240px]">
         <div className="grid gap-12 md:grid-cols-[2fr_1fr_1fr]">
           <div>

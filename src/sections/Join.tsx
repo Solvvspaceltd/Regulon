@@ -112,11 +112,11 @@ export function Join() {
   return (
     <section
       id="join"
-      data-theme="light"
+      data-theme="dark"
       aria-labelledby="join-title"
-      className="bg-paper px-[var(--gutter)] py-[var(--section-y)]"
+      className="px-[var(--gutter)] py-[var(--section-y)]"
     >
-      <div className="mx-auto max-w-[880px] text-center">
+      <div className="mx-auto max-w-[960px] rounded-[var(--radius-panel)] bg-paper px-6 py-16 text-center text-ink shadow-[var(--shadow-float)] sm:px-12 sm:py-20">
         <p className="font-mono text-[13px] uppercase tracking-[0.1em] text-signal-deep">Early access</p>
         <AnimatedHeading
           id="join-title"

@@ -26,166 +26,136 @@ npm run build && npm run start
 
 ## 1. Information architecture
 
-Single long-form page. Every nav link is an in-page anchor, so back/forward, direct links (`/#drill`) and refreshes all work natively.
+Single long-form page, built as one continuous interface. Every nav link is an in-page anchor, so back and forward buttons, direct links and refreshes all work.
 
 | # | Section | Anchor | Job |
 |---|---------|--------|-----|
-| 01 | Hero | `#top` | State the idea in four words: one score, three scales |
-| 02 | Introduction | `#intro` | Why people, not systems |
-| 03 | Three scales | `#scales` | The core story: you → household → organisation |
-| 04 | Products | `#products` | Two equal doors: Clocked and Regulon |
-| 05 | The loop | `#process` | Baseline → Stories → Drills → Score |
-| 06 | Drill demo | `#drill` | Show impact interactively (example figures) |
-| 07 | Principles | `#principles` | Trust: disclosed drills, real stories, privacy wall |
-| 08 | Early access | `#join` | Conversion: one form, two audiences |
-| 09 | Footer | — | Company details, navigation |
-
-Deliberately left out until real content exists: a work/case-study gallery, testimonials and a statistics block. Inventing those would undermine a product whose whole pitch is trust.
+| — | Intro | — | First visit per session: the orb assembles, then glides into the hero (about 2.5 s, skippable) |
+| 01 | Hero | `#top` | "How exposed is your digital world?" with two entry points |
+| 02–06 | Story | `#story` | Footprint → assessment → score → risks → actions → call to action, one continuous visual |
+| 07 | Self-assessment | `#assess` | A real, short assessment: personal (10 questions) or organisation (8) |
+| 08 | Products | `#products` | Two doors: Clocked and Regulon |
+| 09 | Principles | `#principles` | Trust: disclosed drills, earned scores, personal stays personal |
+| 10 | Early access | `#join` | Conversion |
 
 ## 2. Visual direction
 
-- **Concept:** the score ring is the brand. It is the logo, the hero visual, the product UI and the thread through every section.
-- **Ground:** warm paper `#F5F1E8` with ink `#0E1A22`; dark sections bookend the page (hero, principles, footer).
-- **Signal:** one amber `#F0A04B` for scores, focus and calls to action. A deeper `#A3500F` is used for small text on paper, where it passes AA.
-- **Type:** Bricolage Grotesque (display, variable), IBM Plex Sans (body), IBM Plex Mono (labels and figures). All are self-hosted from `src/fonts`, with OFL licences included, so there are no third-party font requests.
-- **Layout:** editorial. Large type, rule lines that open each section, generous whitespace and no card grids.
-- All tokens live in `src/app/globals.css` under `@theme`.
+- **Concept:** the score ring became a **glass orb**, an amber network inside a glass sphere, wrapped in the score arc. It is the logo, the intro, the hero, the product UI and the thread through the whole story.
+- **Art direction:** a dark, glass-and-light-trails world. The supplied image sits in the persistent backdrop. Orbs, trails, particles and grid are drawn in code (SVG/CSS), so they stay sharp at any size and can animate.
+- **Palette:** ink `#0E1A22` ground, amber `#F0A04B` signal, paper `#F5F1E8` text, with a single paper card for the sign-up as the closing contrast moment.
+- **Type:** Bricolage Grotesque (display), IBM Plex Sans (body), IBM Plex Mono (labels). All self-hosted.
+- **Tokens:** `src/app/globals.css` (`@theme`). Motion presets: `src/lib/motion.ts`.
+
+### Swapping in the full-resolution image pack
+
+Put files in `public/media/` and reference them through `asset()` (`src/lib/asset.ts`), which adds the GitHub Pages base path. To replace the backdrop, export the new image as `backdrop-760` and `backdrop-1206` in `.avif`, `.webp` and `.jpg`, or add larger widths to the `srcSet` in `src/components/Backdrop.tsx`.
 
 ## 3. Motion language
 
-Three primary transition styles, used consistently:
+**One persistent stage.** The backdrop never unmounts, and the orb is a single element that moves from the intro into the hero and through every chapter. Nothing is destroyed and recreated.
 
-1. **Masked rise.** Text slides up from behind its own mask (headlines, footer wordmark).
-2. **Clip-path reveal.** Panels open from an inset rounded mask (product doors).
-3. **Colour interpolation.** Backgrounds shift paper → ink on scroll (principles), and the header re-themes to match the section beneath it.
+### Intro timeline (`src/sections/Story.tsx`)
 
-Supporting: scroll-scrubbed word brightening (intro), sticky-card state changes (three scales), a scrubbed progress line (timeline), ring arc drawing (hero and dashboard).
-
-### Motion tokens: `src/lib/motion.ts`
-
-| Token | Value |
+| Time | Stage |
 |---|---|
-| Micro-interactions | 180 ms |
-| Text reveals | 800 ms, `expo.out` |
-| Component entrances | 600 ms, `expo.out` |
-| Section transitions | 1000 ms, `power3.inOut` |
-| Ring draw | 1400 ms, `power3.inOut` |
-| Word stagger | 60 ms |
-| Item stagger | 90 ms |
-| Magnet strength | 0.28 |
-| Card tilt | ±6° |
+| 0.0 s | A point of light appears |
+| 0.25 s | Concentric rings pulse out; the orb's network lines form |
+| 0.8 s | The glass body and score arc assemble |
+| 1.4 s | The scanning arc and indicator points come alive |
+| 1.45 s | REGULON rises letter by letter |
+| 1.95 s | Status changes from "Initialising interface" to "Interface ready" |
+| 2.35 s | The veil lifts and the orb glides into its hero position |
+| 2.95 s | Headline, copy, calls to action and navigation reveal in sequence |
 
-CSS mirrors (`--ease-out-expo`, `--duration-*`) are in `globals.css`.
+**Rules:**
 
-### Hero load sequence
+- The intro plays once per browser session, is skipped for deep links (`/#assess`), and stops on any key, click, scroll or the Skip button.
+- It is desktop-only, is never shown with reduced motion, and never pretends to scan anything.
 
-1. An inline script marks the document `motion-ready` before first paint, so hero pieces start hidden and there is no flash.
-2. The ring fades and scales in.
-3. Its arc draws while the number counts 0 → 82.
-4. The headline rises word by word.
-5. The intro copy staggers in.
-6. The calls to action follow.
-7. The navigation drops in.
-8. The scroll cue appears and the outer ring begins a slow ambient drift.
-9. Scrolling eases the hero copy up and the ring down (scrubbed, reversible).
+### Story choreography
 
-**Safety:** if JavaScript fails to load, a CSS fallback reveals the hero after 2.5 s. Reduced-motion visitors never get the hidden state at all.
+- The copy scrolls normally on the left; the visual is sticky on the right (native `position: sticky`, no scroll hijacking).
+- One scrubbed timeline maps exactly one unit to each one-screen block, so chapter *k* always lines up with block *k*, and it is fully reversible.
+- Six shared elements change role through the chapters: footprint node → assessment row → (converge into the score) → risk card → checklist item.
 
-### Rules followed
+### Other details
 
-- Every reveal tween states its end values explicitly, through `src/lib/reveal.ts`, so nothing can be left stuck invisible.
-- Scroll effects are either `once` entrances or scrubbed to real scroll position, so they are deterministic and reversible.
-- There is no scroll hijacking: the sticky story uses native CSS `position: sticky`. Lenis adds smoothing on wheel only and leaves touch scrolling native.
-- Animations use transform and opacity. Bars and rings use CSS transitions on width and dash-offset, which are cheap at these sizes.
-- All GSAP work runs inside `useGSAP` with `gsap.matchMedia`, so it is reverted on unmount and when media conditions change.
+- **Pointer:** the orb tilts toward the cursor, and the backdrop layers shift at different depths, on fine pointers only.
+- **Timing tokens** (`src/lib/motion.ts`): micro 180 ms, text 800 ms, components 600 ms, sections 1000 ms. Staggers are 60 ms for words and 90 ms for items.
 
 ## 4. Component architecture
 
 ```
 src/
-  app/
-    layout.tsx           fonts, metadata, pre-paint motion gate
-    page.tsx             section composition
-    globals.css          design tokens, base, focus, reduced motion
-    api/waitlist/route.ts  sign-up endpoint (validates, forwards to webhook)
-  lib/
-    motion.ts            central motion presets and media queries
-    gsap.ts              plugin registration (client only)
-    reveal.ts            revealUp / maskUp helpers (explicit end states)
-    content.ts           all copy and example figures in one place
+  app/            layout (fonts, pre-paint mode script), page, globals.css, api/waitlist
+  lib/            motion, gsap, reveal, content (all copy + questions), asset, seeded
   components/
-    SiteHeader.tsx       theme-aware header, active section, progress line, mobile menu
-    SmoothScroll.tsx     Lenis ↔ ScrollTrigger sync
-    MagneticButton.tsx   fill animation and magnetic pull (fine pointers only)
-    AnimatedHeading.tsx  masked word-by-word reveal
-    TextReveal.tsx       scroll-scrubbed word brightening
-    AnimatedCounter.tsx  number tweening
-    InteractiveCard.tsx  pointer tilt (fine pointers only)
-    ScoreRing.tsx        the ring
-    Logo.tsx             Regulon and Clocked marks
+    Backdrop        persistent image, grid, light trails, particles, pointer depth
+    Orb             the glass orb (hooks: data-orb-*)
+    StoryVisuals    static chapter visuals for phones / reduced motion / no-JS
+    AssessLink      buttons that open the assessment in a chosen mode
+    SiteHeader, SmoothScroll, MagneticButton, AnimatedHeading,
+    AnimatedCounter, InteractiveCard, Logo
   sections/
-    Hero, Intro, ThreeScales, Products, Process, DrillDemo, Principles, Join, SiteFooter
-  fonts/                 self-hosted woff2 and OFL licences
+    Story           intro + hero + chapters 01–06
+    Assessment      the self-assessment and results
+    Products, Principles, Join, SiteFooter
 ```
 
-## 5. Per-section notes
+## 5. Modes and fallbacks
 
-| Section | Entry | Scroll | Hover | Mobile | Reduced motion |
-|---|---|---|---|---|---|
-| Hero | Sequenced timeline | Copy and ring parallax (scrub) | Magnetic CTAs | Ring dimmed to 35%; no number or scroll cue | Static, fully visible |
-| Intro | — | Words brighten (scrub) | — | Same | Full-strength text |
-| Three scales | Panel items rise | Sticky card switches scale at viewport centre | — | No sticky; each panel shows its own ring | Same states, no tween |
-| Products | Clip-path open and stagger | — | Tilt and button fills | Stacked | Static |
-| Process | Steps rise | Progress line and markers (scrub) | — | Vertical line | Line full, markers on |
-| Drill demo | Heading mask | — | Button | Stacked | Instant number changes |
-| Principles | Items rise | Background paper → ink; outline → solid headline | — | Same | Solid headline, dark ground |
-| Join | Heading mask | — | Button fill, focus ring | Stacked form | Same |
-| Footer | Wordmark rises | — | Link colour | Same | Static |
+A small inline script picks the experience before the first paint, so nothing jumps.
+
+| Situation | Experience |
+|---|---|
+| Desktop (≥ 900 px), motion allowed | Intro (first visit), sticky animated story |
+| Phone or tablet portrait | Copy in normal flow with a static visual under each chapter; light reveals |
+| `prefers-reduced-motion` | Static flow, no intro, everything visible immediately |
+| JavaScript fails | Static flow. If the bundle fails mid-way, hidden hero pieces reveal after 6 s |
+
+### Honesty rules built in
+
+- Story figures are labelled **Example** wherever they appear.
+- The self-assessment's score is computed only from the visitor's answers and labelled **indicative**. It makes **no network requests** (verified in testing) and stores nothing.
+- Nothing is scanned. Any future active checks on organisational assets must require proof of authorisation first.
 
 ## 6. Accessibility
 
-- Semantic landmarks, one `h1`, ordered headings, and a skip link to `#main`.
-- The mobile menu is a modal dialog: focus moves in, Tab is trapped, Escape closes it and focus returns to the toggle.
-- Visible `:focus-visible` ring everywhere (3 px amber).
-- Rings carry `role="img"` with a spoken label. Animated counters are hidden from screen readers and paired with real text.
-- Live regions announce the active scale, drill results and form status.
-- The form has a labelled input, `aria-invalid`, and described-by hint and status text.
-- `prefers-reduced-motion` is respected everywhere. No content depends on animation to be readable.
+- Semantic landmarks, one `h1`, ordered headings, skip link.
+- The assessment uses real radio inputs inside a fieldset. Focus moves to each new question, then to the result heading.
+- The mobile menu is a modal dialog with a focus trap and Escape to close.
+- Decorative layers are `aria-hidden`. Score visuals carry spoken labels.
+- `prefers-reduced-motion` is respected everywhere.
 
 ## 7. Performance
 
-- Two client libraries for motion (GSAP and Lenis), with no 3D or WebGL. Three.js and shaders weren't justified for this content and would cost real weight on mobile.
-- Fonts are self-hosted with `display: swap`. Only latin subsets are included, about 130 KB total.
-- The page is prerendered static; only `/api/waitlist` runs on demand.
-- Animation contexts are cleaned up on unmount, and there is one Lenis RAF loop driven by the GSAP ticker.
+- The backdrop image is 46 KB as AVIF (WebP and JPEG fallbacks).
+- Everything else visual is SVG/CSS. There is no WebGL or 3D library; the orb doesn't need one.
+- GSAP and Lenis only. All contexts are reverted on unmount, and the ambient loops are a few transform tweens.
 
 ## 8. Testing checklist
 
-Verified during build:
+Verified during build (Chromium, 1440 × 900 and 390 × 844):
 
-- [x] `npm run build`, lint and type-check clean
-- [x] 1440 × 900, 1280 × 800 and 390 × 844: no horizontal overflow, no console errors
-- [x] Hero sequence completes and all elements end visible
-- [x] Reduced motion: hero fully visible at first paint
-- [x] Sticky story switches scale and the titles stay visible
-- [x] Drill demo moves every team bar and the overall score
-- [x] Form: invalid email is flagged; submitting without a webhook shows the "not open yet" message
-- [x] Mobile menu: focus in, Escape closes, focus returns
-- [x] Header stays solid at the bottom of the page
+- [x] Build, lint and type-check clean; no console errors
+- [x] Intro frames: the orb assembles in full light, glides to the hero, and the hero reveals
+- [x] Each chapter lands exactly on its own state (layer opacities measured per chapter)
+- [x] Assessment: the organisation button opens organisation mode; all questions are answerable; the result renders; focus lands on the result; **zero network requests**
+- [x] Mobile static flow: no horizontal overflow
+- [x] Reduced motion: no intro, content visible at first paint
+- [x] GitHub Pages static build: assets and the backdrop image load under `/Regulon/`
 
-Still to run on real devices before launch:
+Still to run on real devices:
 
-- [ ] iOS Safari and Android Chrome (address-bar resize, sticky behaviour)
-- [ ] Firefox and Safari desktop
-- [ ] Throttled network ("Slow 4G") and low-power CPU (4× slowdown)
-- [ ] Rapid scrolling and resizing during animations
-- [ ] Screen reader pass (VoiceOver, NVDA)
-- [ ] Lighthouse / Core Web Vitals on the deployed URL
-- [ ] Live form submission once `WAITLIST_WEBHOOK_URL` is set
+- [ ] Safari and Firefox (desktop), iOS Safari, Android Chrome
+- [ ] Low-power CPU (4× throttle): intro and scrub smoothness
+- [ ] Keyboard-only and screen reader pass
+- [ ] Lighthouse on the live URL
 
 ## 9. Placeholders to replace
 
 - `[CONTACT EMAIL]` in `src/sections/SiteFooter.tsx`
+- Full-resolution originals of the image pack (see "Swapping in the full-resolution image pack"). Confirm SolvvSpace holds a commercial licence for them.
 - Privacy notice link (footer). Write the notice before collecting emails.
 - App store links once Clocked is listed. They currently point to `#join`.
 - Example figures in `src/lib/content.ts` stay labelled "example" until you have real data.

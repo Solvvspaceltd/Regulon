@@ -140,11 +140,11 @@ export function SiteHeader() {
         className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ease-[var(--ease-out-expo)] ${surface} ${text}`}
       >
         <div className="mx-auto flex h-[var(--header-h)] max-w-[1240px] items-center justify-between gap-4 px-[var(--gutter)]">
-          <a href="#top" aria-label="Regulon, back to top" data-hero-reveal data-nav>
+          <a href="#top" aria-label="Regulon, back to top" data-intro-hide data-nav>
             <RegulonWordmark tone={dark ? "paper" : "ink"} />
           </a>
 
-          <nav aria-label="Main" className="hidden items-center gap-8 text-[15px] lg:flex" data-hero-reveal data-nav>
+          <nav aria-label="Main" className="hidden items-center gap-8 text-[15px] lg:flex" data-intro-hide data-nav>
             {navLinks.map((l) => {
               const isActive = active === l.id;
               return (
@@ -166,9 +166,9 @@ export function SiteHeader() {
             })}
           </nav>
 
-          <div className="flex items-center gap-3" data-hero-reveal data-nav>
+          <div className="flex items-center gap-3" data-intro-hide data-nav>
             <span className="hidden sm:inline-block">
-              <MagneticButton href="#join" variant={dark ? "signal" : "ink"}>
+              <MagneticButton href="#join" variant="signal">
                 Get early access
               </MagneticButton>
             </span>

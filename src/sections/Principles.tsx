@@ -8,8 +8,7 @@ import { principles } from "@/lib/content";
 
 /**
  * 07 · Principles (in place of testimonials, which don't exist yet).
- * Background colour interpolates from paper to ink as the section arrives,
- * and the headline fills from outline to solid in step with scroll.
+ * The headline fills from outline to solid in step with scroll.
  */
 export function Principles() {
   const root = useRef<HTMLElement>(null);
@@ -18,15 +17,6 @@ export function Principles() {
     () => {
       const mm = gsap.matchMedia();
       mm.add(mq.motion, () => {
-        gsap.fromTo(
-          root.current,
-          { backgroundColor: "#f5f1e8" },
-          {
-            backgroundColor: "#0e1a22",
-            ease: "none",
-            scrollTrigger: { trigger: root.current, start: "top 95%", end: "top 35%", scrub: true },
-          },
-        );
         gsap.fromTo(
           "[data-fill]",
           { backgroundSize: "0% 100%" },
@@ -49,7 +39,7 @@ export function Principles() {
       ref={root}
       data-theme="dark"
       aria-labelledby="principles-title"
-      className="bg-ink px-[var(--gutter)] py-[var(--section-y)] text-paper"
+      className="px-[var(--gutter)] py-[var(--section-y)] text-paper"
     >
       <div className="mx-auto max-w-[1240px]">
         <p className="font-mono text-[13px] uppercase tracking-[0.1em] text-signal">Principles</p>

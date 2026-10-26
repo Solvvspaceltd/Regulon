@@ -75,13 +75,13 @@ export function Products() {
     <section
       id="products"
       ref={root}
-      data-theme="light"
+      data-theme="dark"
       aria-labelledby="products-title"
-      className="bg-paper px-[var(--gutter)] pb-[var(--section-y)]"
+      className="px-[var(--gutter)] py-[var(--section-y)] text-paper"
     >
       <div className="mx-auto max-w-[1240px]">
-        <div className="border-t-2 border-ink pt-10">
-          <p className="font-mono text-[13px] uppercase tracking-[0.1em] text-signal-deep">Two ways in</p>
+        <div className="border-t border-paper/20 pt-10">
+          <p className="font-mono text-[13px] uppercase tracking-[0.1em] text-signal">Two ways in</p>
           <AnimatedHeading
             id="products-title"
             lines={["Same stories. Same score.", "Built for a family or a workforce."]}
@@ -95,7 +95,7 @@ export function Products() {
             <InteractiveCard
               id="clocked"
               labelledBy="clocked-title"
-              className="flex h-full flex-col gap-6 rounded-[var(--radius-card)] bg-paper-2 p-8 sm:p-12"
+              className="flex h-full flex-col gap-6 rounded-[var(--radius-card)] bg-paper-2 p-8 text-ink sm:p-12"
             >
               <div data-door-item className="flex flex-wrap items-center gap-3">
                 <ClockedMark size={34} />
@@ -126,7 +126,7 @@ export function Products() {
             <InteractiveCard
               id="regulon"
               labelledBy="regulon-title"
-              className="flex h-full flex-col gap-6 rounded-[var(--radius-card)] bg-ink p-8 text-paper sm:p-12"
+              className="flex h-full flex-col gap-6 rounded-[var(--radius-card)] border border-paper/12 bg-ink-2/80 p-8 text-paper backdrop-blur-md sm:p-12"
             >
               <div data-door-item className="flex flex-wrap items-center gap-3">
                 <RegulonMark size={34} tone="paper" />
