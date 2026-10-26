@@ -20,7 +20,8 @@ export function SmoothScroll() {
   useEffect(() => {
     const lenis = new Lenis({
       lerp: 0.12,
-      anchors: { offset: -72 },
+      // Lenis already honours scroll-padding-top and scroll-margin-top, so no extra offset.
+      anchors: true,
       stopInertiaOnNavigate: true,
       respectReducedMotion: true,
     });

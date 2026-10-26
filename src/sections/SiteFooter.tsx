@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { motion, mq } from "@/lib/motion";
 import { maskUp } from "@/lib/reveal";
-import { company, navLinks } from "@/lib/content";
+import { allLinks, company } from "@/lib/content";
 import { RegulonMark } from "@/components/Logo";
 
 /**
@@ -41,7 +41,7 @@ export function SiteFooter() {
           <nav aria-label="Footer">
             <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-muted-on-ink">Explore</p>
             <ul className="mt-4 flex flex-col gap-2.5 text-[15px]">
-              {navLinks.map((l) => (
+              {allLinks.map((l) => (
                 <li key={l.id}>
                   <a href={`#${l.id}`} className="text-paper underline-offset-4 hover:text-signal hover:underline">
                     {l.label}

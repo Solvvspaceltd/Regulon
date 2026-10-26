@@ -42,11 +42,11 @@ export function Principles() {
       className="px-[var(--gutter)] py-[var(--section-y)] text-paper"
     >
       <div className="mx-auto max-w-[1240px]">
-        <p className="font-mono text-[13px] uppercase tracking-[0.1em] text-signal">Principles</p>
+        <p className="font-mono text-[13px] uppercase tracking-[0.1em] text-signal md:text-right">Principles</p>
         <h2
           id="principles-title"
           data-fill
-          className="mt-6 font-display text-[clamp(56px,11vw,168px)] font-bold leading-[0.88] tracking-[-0.05em] motion-safe:bg-[linear-gradient(var(--color-paper),var(--color-paper))] motion-safe:bg-clip-text motion-safe:bg-no-repeat motion-safe:text-transparent motion-safe:[-webkit-text-stroke:1.5px_var(--color-paper)]"
+          className="mt-6 font-display md:text-right text-[clamp(56px,11vw,168px)] font-bold leading-[0.88] tracking-[-0.05em] motion-safe:bg-[linear-gradient(var(--color-paper),var(--color-paper))] motion-safe:bg-clip-text motion-safe:bg-no-repeat motion-safe:text-transparent motion-safe:[-webkit-text-stroke:1.5px_var(--color-paper)]"
           style={{ backgroundSize: "100% 100%" }}
         >
           We never ambush.

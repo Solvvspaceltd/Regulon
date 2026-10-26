@@ -23,8 +23,12 @@ const BRAND = "REGULON".split("");
 const EXAMPLE_SCORE = 74;
 
 /* ------------------------------------------------------------------ */
-/* Scene states. Every value is in units of the visual area's size S,  */
-/* so the whole choreography scales with the viewport.                  */
+/* Scene states.                                                        */
+/* - rig: where the whole visual sits, in fractions of the viewport     */
+/*   (x of width, y of height). It moves the orb, network and cards     */
+/*   across the screen so copy and visual swap sides between chapters.  */
+/* - orb and items: positions inside the rig, in units of the visual    */
+/*   area's size S, so everything scales with the screen.               */
 /* ------------------------------------------------------------------ */
 
 type ItemState = {
@@ -40,7 +44,7 @@ type ItemState = {
   tick?: boolean;
 };
 type OrbState = { x: number; y: number; scale: number; score: number; arc: number };
-type SceneState = { orb: OrbState; items: (i: number) => ItemState; lines: boolean };
+type SceneState = { rig: [number, number]; orb: OrbState; items: (i: number) => ItemState; lines: boolean };
 
 const ROW = { w: 0.78, h: 0.094 };
 const CARD = { w: 0.29, h: 0.2 };
@@ -49,28 +53,39 @@ const nodeAt = (i: number) => {
   const a = ((-90 + i * 60) * Math.PI) / 180;
   return { x: Math.cos(a) * 0.4, y: Math.sin(a) * 0.4 };
 };
-
 const hidden = (): ItemState => ({ x: 0, y: 0, scale: 0.35, dot: 0, node: 0, panel: 0, w: ROW.w, h: ROW.h, mode: "none" });
 
+const SIDE = 0.22; // how far the visual travels left or right (fraction of viewport width)
+const HERO_RIG: [number, number] = [0, -0.21];
+const HERO_ORB = 0.5;
+
 const STATES: SceneState[] = [
-  // 0 · Hero
-  { orb: { x: 0, y: 0, scale: 0.9, score: 0, arc: 100 }, items: hidden, lines: false },
-  // 1 · Footprint: the orb becomes the centre of a connected network
+  // 0 · Hero: centred, orb above the headline
+  { rig: HERO_RIG, orb: { x: 0, y: 0, scale: HERO_ORB, score: 0, arc: 100 }, items: hidden, lines: false },
+  // 1 · Footprint (copy left, visual right): the orb becomes the hub of a network
   {
+    rig: [SIDE, 0],
     orb: { x: 0, y: 0, scale: 0.34, score: 0, arc: 100 },
     items: (i) => ({ ...nodeAt(i), scale: 1, dot: 1, node: 1, panel: 0, w: ROW.w, h: ROW.h, mode: "none" }),
     lines: true,
   },
-  // 2 · Assessment: nodes reorganise into assessment rows
+  // 2 · Assessment (copy right, visual left): nodes reorganise into rows
   {
+    rig: [-SIDE, 0],
     orb: { x: 0, y: -0.47, scale: 0.16, score: 0, arc: 100 },
     items: (i) => ({ x: 0, y: rowY(i), scale: 1, dot: 0, node: 0, panel: 1, w: ROW.w, h: ROW.h, mode: "row" }),
     lines: false,
   },
-  // 3 · Score: rows converge into the score dashboard
-  { orb: { x: 0, y: 0, scale: 0.9, score: 1, arc: EXAMPLE_SCORE }, items: () => ({ ...hidden(), scale: 0.2 }), lines: false },
-  // 4 · Risks: the dashboard expands into risk cards
+  // 3 · Score (centred): rows converge into the score
   {
+    rig: [0, -0.12],
+    orb: { x: 0, y: 0, scale: 0.64, score: 1, arc: EXAMPLE_SCORE },
+    items: () => ({ ...hidden(), scale: 0.2 }),
+    lines: false,
+  },
+  // 4 · Risks (copy left, visual right): the score expands into risk cards
+  {
+    rig: [SIDE, 0],
     orb: { x: 0, y: -0.39, scale: 0.3, score: 0, arc: EXAMPLE_SCORE },
     items: (i) => ({
       x: (i % 3) * 0.31 - 0.31,
@@ -85,23 +100,45 @@ const STATES: SceneState[] = [
     }),
     lines: false,
   },
-  // 5 · Actions: cards become a remediation checklist
+  // 5 · Actions (copy right, visual left): cards become a checklist
   {
+    rig: [-SIDE, 0],
     orb: { x: 0, y: -0.47, scale: 0.16, score: 0, arc: EXAMPLE_SCORE },
     items: (i) => ({ x: 0, y: rowY(i), scale: 1, dot: 0, node: 0, panel: 1, w: ROW.w, h: ROW.h, mode: "check", tick: true }),
     lines: false,
   },
-  // 6 · Closing call to action
-  { orb: { x: 0, y: 0, scale: 0.9, score: 0, arc: 100 }, items: hidden, lines: false },
+  // 6 · Closing (centred), mirroring the hero
+  { rig: HERO_RIG, orb: { x: 0, y: 0, scale: HERO_ORB, score: 0, arc: 100 }, items: hidden, lines: false },
 ];
+
+/** Copy placement per block, matching where the visual is NOT. */
+const ALIGN: Record<string, "left" | "right" | "center"> = {
+  footprint: "left",
+  assessment: "right",
+  score: "center",
+  risks: "left",
+  actions: "right",
+};
+
+const blockClass = (align: "left" | "right" | "center") =>
+  align === "center"
+    ? "[.story-scene_&]:justify-end [.story-scene_&]:items-center [.story-scene_&]:pb-[8vh] [.story-scene_&]:text-center"
+    : "[.story-scene_&]:justify-center";
+const copyClass = (align: "left" | "right" | "center") =>
+  align === "right"
+    ? "[.story-scene_&]:ml-auto [.story-scene_&]:w-[min(40vw,520px)]"
+    : align === "left"
+      ? "[.story-scene_&]:w-[min(40vw,520px)]"
+      : "[.story-scene_&]:max-w-[640px] [.story-scene_&]:mx-auto";
 
 /**
  * 01–06 · Hero and connected story.
  *
- * Desktop with motion: one sticky visual on the right. A cinematic intro
- * assembles the orb, which then glides into the hero; as the copy scrolls
- * on the left, the same orb and six elements move through every chapter,
- * scrubbed to scroll position and fully reversible.
+ * Desktop with motion: a full-width sticky stage sits behind the copy. The
+ * intro assembles the orb at the centre of the screen, then it rises into
+ * the centred hero. As the copy scrolls, alternating sides, one rig carries
+ * the orb and six shared elements across the stage and through every
+ * chapter, scrubbed to scroll position and fully reversible.
  *
  * Phones, reduced motion and no-JS: the same copy in normal flow, with a
  * static visual under each chapter.
@@ -123,7 +160,13 @@ export function Story() {
           .timeline({ delay, defaults: { ease: motion.ease.out } })
           .fromTo(words, { yPercent: motion.maskTravel, y: 0 }, { yPercent: 0, y: 0, duration: motion.duration.text, stagger: motion.stagger.words })
           .fromTo(heroBits, { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: motion.duration.component, stagger: motion.stagger.items }, "-=0.55")
-          .fromTo(navItems, { y: -14, opacity: 0 }, { y: 0, opacity: 1, duration: motion.duration.component, stagger: 0.06 }, "-=0.5");
+          .fromTo(
+            navItems,
+            { y: -14, opacity: 0 },
+            // clearProps: a leftover transform would trap the Platform panel inside the nav's box
+            { y: 0, opacity: 1, duration: motion.duration.component, stagger: 0.06, clearProps: "transform" },
+            "-=0.5",
+          );
 
       const done = () => {
         html.classList.remove("intro-pending");
@@ -135,7 +178,7 @@ export function Story() {
 
       const mm = gsap.matchMedia();
 
-      /* ---------------- Flow mode (phones, reduced motion) ------------ */
+      /* ---------------- Flow mode (phones, tablets portrait) ---------- */
       mm.add(mq.motion, () => {
         if (scene) return;
         gsap.set([...navItems, ...heroBits], { opacity: 1 });
@@ -157,15 +200,20 @@ export function Story() {
       mm.add(mq.motion, () => {
         if (!scene) return;
         const area = q("[data-area]")[0] as HTMLElement;
+        const rig = q("[data-rig]")[0] as HTMLElement;
         const orb = q("[data-orb]")[0] as HTMLElement;
         const arc = q("[data-orb-arc]");
         const score = q("[data-orb-score]");
         const items = q("[data-item]");
         const lines = q("[data-line]");
         const S = () => area.offsetWidth;
+        const VW = () => window.innerWidth;
+        const VH = () => window.innerHeight;
+        const rigTo = (st: SceneState) => ({ x: () => st.rig[0] * VW(), y: () => st.rig[1] * VH() });
 
         // Hero state
-        gsap.set(orb, { x: 0, y: 0, scale: STATES[0].orb.scale });
+        gsap.set(rig, { x: 0, y: HERO_RIG[1] * VH() });
+        gsap.set(orb, { x: 0, y: 0, scale: HERO_ORB });
         gsap.set(score, { opacity: 0 });
         gsap.set(lines, { strokeDashoffset: 42, opacity: 0 });
         items.forEach((el) => {
@@ -177,17 +225,17 @@ export function Story() {
         const scan = gsap.to(q("[data-orb-scan]"), { rotation: 360, svgOrigin: "50 50", duration: 9, ease: "none", repeat: -1 });
         const drift = gsap.to(q("[data-orb-net]"), { rotation: 360, svgOrigin: "50 50", duration: 140, ease: "none", repeat: -1 });
 
-        // Pointer response: the orb tilts gently toward the cursor
+        // Pointer response: the orb leans gently toward the cursor
         const tilt = q("[data-orb-tilt]")[0] as HTMLElement;
         const tx = gsap.quickTo(tilt, "x", { duration: 1.2, ease: "power3.out" });
         const ty = gsap.quickTo(tilt, "y", { duration: 1.2, ease: "power3.out" });
-        const rx = gsap.quickTo(tilt, "rotationY", { duration: 1.2, ease: "power3.out" });
+        const ry = gsap.quickTo(tilt, "rotationY", { duration: 1.2, ease: "power3.out" });
         const onMove = (e: PointerEvent) => {
           const px = e.clientX / window.innerWidth - 0.5;
           const py = e.clientY / window.innerHeight - 0.5;
           tx(px * 14);
           ty(py * 14);
-          rx(px * 8);
+          ry(px * 8);
         };
         gsap.set(tilt, { transformPerspective: 900 });
         window.addEventListener("pointermove", onMove, { passive: true });
@@ -209,6 +257,7 @@ export function Story() {
             const st = STATES[k];
             const at = k - 1 + 0.15;
             story
+              .to(rig, { ...rigTo(st), duration: 0.8 }, at - 0.05)
               .to(orb, { x: () => st.orb.x * S(), y: () => st.orb.y * S(), scale: st.orb.scale }, at)
               .to(arc, { strokeDashoffset: ORB_ARC * (1 - st.orb.arc / 100) }, at)
               .to(score, { opacity: st.orb.score }, at)
@@ -230,16 +279,15 @@ export function Story() {
                 );
             });
           }
-          // Every transition finishes inside its own block (k-1 → k), and the
-          // timeline is pinned to exactly one unit per block, so chapter k
-          // always lines up with block k.
+          // Every transition finishes inside its own block, and the timeline is
+          // pinned to exactly one unit per block, so chapter k lines up with block k.
           story.to({}, { duration: 0.001 }, STATES.length - 1 - 0.001);
           if (process.env.NODE_ENV !== "production" && story.duration() > STATES.length - 1 + 0.01) {
             console.warn("[story] timeline overruns its blocks:", story.duration());
           }
         };
 
-        /* -------- Cinematic intro -------- */
+        /* -------- Cinematic intro, centred on screen -------- */
         const pending = html.classList.contains("intro-pending") && window.scrollY < 10;
         let intro: gsap.core.Timeline | null = null;
         const unlock = () => {
@@ -267,12 +315,11 @@ export function Story() {
           window.addEventListener("keydown", skip);
           window.addEventListener("pointerdown", skip);
 
-          const r = area.getBoundingClientRect();
-          const cx = window.innerWidth / 2 - (r.left + r.width / 2);
-          const cy = window.innerHeight / 2 - 48 - (r.top + r.height / 2);
           const L = (sel: string) => q(`[data-loader] ${sel}`);
 
-          gsap.set(orb, { x: cx, y: cy, scale: 0.4 });
+          // The orb assembles at the exact centre of the screen
+          gsap.set(rig, { x: 0, y: 0 });
+          gsap.set(orb, { x: 0, y: -48, scale: 0.4 });
           gsap.set(q("[data-orb-glass]"), { opacity: 0 });
           gsap.set(q("[data-orb-link]"), { opacity: 0 });
           gsap.set(q("[data-orb-point]"), { opacity: 0 });
@@ -313,13 +360,14 @@ export function Story() {
             // 6 · status
             .to(L("[data-l-init]"), { opacity: 0, duration: 0.2 }, 1.95)
             .to(L("[data-l-ready]"), { opacity: 1, duration: 0.25 }, 2.05)
-            // 7 · the orb glides into the hero
+            // 7 · the orb rises into the centred hero
             .to(L("[data-l-text]"), { opacity: 0, y: 10, duration: 0.35, ease: "power2.in" }, 2.35)
             .to(q("[data-l-veil]"), { opacity: 0, duration: 0.9, ease: "power2.inOut" }, 2.35)
-            .to(orb, { x: 0, y: 0, scale: STATES[0].orb.scale, duration: 1.05, ease: motion.ease.inOut }, 2.4)
+            .to(rig, { y: HERO_RIG[1] * VH(), duration: 1.05, ease: motion.ease.inOut }, 2.4)
+            .to(orb, { y: 0, scale: HERO_ORB, duration: 1.05, ease: motion.ease.inOut }, 2.4)
             .to(q("[data-orb-glow]"), { opacity: 1, duration: 0.8 }, 2.7)
-            // 8–9 · the page arrives around it
-            .add(revealHero(), 2.95);
+            // 8–9 · the page arrives beneath it
+            .add(revealHero(), 2.9);
         }
 
         return () => {
@@ -339,13 +387,7 @@ export function Story() {
   );
 
   return (
-    <section
-      id="top"
-      ref={root}
-      data-theme="dark"
-      aria-label="Regulon: how exposed is your digital world"
-      className="relative text-paper"
-    >
+    <section id="top" ref={root} data-theme="dark" aria-label="Regulon: how exposed is your digital world" className="relative text-paper">
       {/* ---------------- Intro (desktop scene, first visit) ---------------- */}
       {/* The veil sits behind the orb but above the backdrop, so the orb assembles in full light. */}
       <div data-loader data-l-veil className="pointer-events-none fixed inset-0 z-[1] hidden bg-ink/90 [.intro-pending_&]:block" aria-hidden="true" />
@@ -353,11 +395,7 @@ export function Story() {
         <div className="absolute left-1/2 top-[calc(50%-48px)] -translate-x-1/2 -translate-y-1/2">
           <span data-l-point className="absolute left-1/2 top-1/2 block h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffd29a] shadow-[0_0_30px_8px_rgb(240_160_75/0.6)]" />
           {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              data-l-ring
-              className="absolute left-1/2 top-1/2 block h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-signal/70"
-            />
+            <span key={i} data-l-ring className="absolute left-1/2 top-1/2 block h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-signal/70" />
           ))}
         </div>
         <div data-l-text className="absolute inset-x-0 top-[calc(50%-20px+min(44vw,74svh,640px)*0.2)] flex flex-col items-center gap-4">
@@ -382,118 +420,11 @@ export function Story() {
         Skip intro
       </button>
 
-      <div className="relative z-[2] mx-auto grid max-w-[1320px] px-[var(--gutter)] [.story-scene_&]:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] [.story-scene_&]:gap-10">
-        {/* ---------------- Copy column ---------------- */}
-        <div className="min-w-0">
-          {/* Hero */}
-          <div data-block="hero" className="flex min-h-[100svh] flex-col justify-center pb-16 pt-[calc(var(--header-h)+2rem)]">
-            <div data-flow-only className="mb-10 flex justify-center">
-              <Orb value={100} className="w-[min(64vw,300px)]" />
-            </div>
-            <p data-hero-bit data-intro-hide className="font-mono text-[13px] uppercase tracking-[0.1em] text-signal">
-              {hero.eyebrow}
-            </p>
-            <h1
-              id="hero-title"
-              className="mt-6 font-display text-[clamp(44px,4.9vw,80px)] font-bold leading-[0.96] tracking-[-0.045em]"
-            >
-              {hero.headline.map((line, i) => (
-                <span key={i} className="block">
-                  {line.split(" ").map((w, j, arr) => (
-                    <span key={j} className="word-mask">
-                      <span data-hero-word className="word-inner">
-                        {w}
-                        {j < arr.length - 1 ? " " : ""}
-                      </span>
-                    </span>
-                  ))}
-                </span>
-              ))}
-            </h1>
-            <p data-hero-bit data-intro-hide className="mt-7 max-w-[32rem] text-[clamp(17px,1.35vw,19px)] leading-relaxed text-soft-on-ink">
-              {hero.body}
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <span data-hero-bit data-intro-hide>
-                <AssessLink mode="personal" variant="signal" arrow>
-                  {hero.primary}
-                </AssessLink>
-              </span>
-              <span data-hero-bit data-intro-hide>
-                <AssessLink mode="organisation" variant="ghost-paper">
-                  {hero.secondary}
-                </AssessLink>
-              </span>
-            </div>
-            <p data-hero-bit data-intro-hide className="mt-6 text-[13px] text-muted-on-ink">
-              Free, about three minutes. Your answers stay in your browser.
-            </p>
-          </div>
-
-          {/* Chapters */}
-          <div id="story" className="scroll-mt-[var(--header-h)]">
-            {chapters.map((c) => (
-              <article
-                key={c.id}
-                data-block={c.id}
-                aria-labelledby={`ch-${c.id}`}
-                className="flex flex-col justify-center py-16 [.story-scene_&]:min-h-[100svh] [.story-scene_&]:py-0"
-              >
-                <div data-flow-reveal>
-                  <p className="font-mono text-[13px] text-signal">
-                    {c.index} · {c.label}
-                  </p>
-                  <h2
-                    id={`ch-${c.id}`}
-                    className="mt-4 max-w-[16ch] font-display text-[clamp(32px,3.6vw,54px)] font-semibold leading-[1.02] tracking-[-0.035em]"
-                  >
-                    {c.title}
-                  </h2>
-                  <p className="mt-5 max-w-[30rem] text-[17px] leading-relaxed text-soft-on-ink">{c.body}</p>
-                  {c.id === "score" || c.id === "risks" || c.id === "actions" ? (
-                    <p className="mt-4 text-[13px] text-muted-on-ink">
-                      Figures shown are an example. Your real score comes from your own assessment.
-                    </p>
-                  ) : null}
-                </div>
-                <div data-flow-only data-flow-reveal className="mt-10">
-                  {c.id === "footprint" && <FootprintStatic />}
-                  {c.id === "assessment" && <AssessmentStatic />}
-                  {c.id === "score" && <ScoreStatic />}
-                  {c.id === "risks" && <RisksStatic />}
-                  {c.id === "actions" && <ActionsStatic />}
-                </div>
-              </article>
-            ))}
-
-            {/* Closing call to action */}
-            <div data-block="cta" className="flex flex-col justify-center py-16 [.story-scene_&]:min-h-[100svh] [.story-scene_&]:py-0">
-              <div data-flow-reveal>
-                <p className="font-mono text-[13px] text-signal">06 · Your turn</p>
-                <h2 className="mt-4 max-w-[14ch] font-display text-[clamp(36px,4.2vw,64px)] font-bold leading-[0.98] tracking-[-0.04em]">
-                  See where you really stand.
-                </h2>
-                <p className="mt-5 max-w-[30rem] text-[17px] leading-relaxed text-soft-on-ink">
-                  Ten quick questions for you, or eight for your organisation. You get an indicative score and your top fixes,
-                  straight away.
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <AssessLink mode="personal" variant="signal" arrow>
-                    {hero.primary}
-                  </AssessLink>
-                  <AssessLink mode="organisation" variant="ghost-paper">
-                    {hero.secondary}
-                  </AssessLink>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ---------------- Sticky visual (desktop scene) ---------------- */}
-        <div data-scene-only className="relative hidden [.story-scene_&]:block" aria-hidden="true">
-          <div className="sticky top-0 flex h-[100svh] items-center justify-center">
-            <div data-area className="relative aspect-square w-[min(44vw,74svh,640px)]">
+      {/* ---------------- Full-width sticky stage (desktop scene) ---------------- */}
+      <div data-scene-only className="pointer-events-none sticky top-0 z-[2] hidden h-[100svh] [.story-scene_&]:block" aria-hidden="true">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div data-area className="relative aspect-square w-[min(44vw,74svh,640px)]">
+            <div data-rig className="absolute inset-0 will-change-transform">
               {/* Footprint connections */}
               <svg viewBox="-50 -50 100 100" className="absolute inset-0 h-full w-full overflow-visible">
                 {storyItems.map((it, i) => {
@@ -522,9 +453,7 @@ export function Story() {
                 <div data-orb-tilt className="h-full w-full">
                   <Orb value={100} className="h-full w-full">
                     <div data-orb-score className="flex flex-col items-center opacity-0">
-                      <span className="font-display text-[clamp(64px,7vw,120px)] font-bold leading-none tracking-[-0.05em]">
-                        {EXAMPLE_SCORE}
-                      </span>
+                      <span className="font-display text-[clamp(64px,7vw,120px)] font-bold leading-none tracking-[-0.05em]">{EXAMPLE_SCORE}</span>
                       <span className="mt-2 text-[13px] text-muted-on-ink">out of 100</span>
                       <ExampleTag className="mt-3" />
                     </div>
@@ -535,14 +464,8 @@ export function Story() {
               {/* Six shared elements */}
               {storyItems.map((it) => (
                 <div key={it.key} data-item className="absolute left-1/2 top-1/2 h-0 w-0">
-                  <span
-                    data-dot
-                    className="absolute left-0 top-0 block h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal opacity-0 shadow-[0_0_18px_4px_rgb(240_160_75/0.55)]"
-                  />
-                  <span
-                    data-node
-                    className="absolute left-0 top-4 -translate-x-1/2 whitespace-nowrap rounded-full border border-paper/15 bg-ink/70 px-3 py-1 text-[13px] opacity-0 backdrop-blur"
-                  >
+                  <span data-dot className="absolute left-0 top-0 block h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal opacity-0 shadow-[0_0_18px_4px_rgb(240_160_75/0.55)]" />
+                  <span data-node className="absolute left-0 top-4 -translate-x-1/2 whitespace-nowrap rounded-full border border-paper/15 bg-ink/70 px-3 py-1 text-[13px] opacity-0 backdrop-blur">
                     {it.node}
                   </span>
                   <div
@@ -570,6 +493,114 @@ export function Story() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ---------------- Copy, scrolling over the stage ---------------- */}
+      <div className="relative z-[3] mx-auto max-w-[1320px] px-[var(--gutter)] [.story-scene_&]:-mt-[100svh]">
+        {/* Hero: centred */}
+        <div
+          data-block="hero"
+          className="flex min-h-[100svh] flex-col items-center justify-center pb-16 pt-[calc(var(--header-h)+2rem)] text-center [.story-scene_&]:h-[100svh] [.story-scene_&]:justify-end [.story-scene_&]:pb-[7vh] [.story-scene_&]:pt-0"
+        >
+          <div data-flow-only className="mb-10 flex justify-center">
+            <Orb value={100} className="w-[min(64vw,300px)]" />
+          </div>
+          <p data-hero-bit data-intro-hide className="font-mono text-[13px] uppercase tracking-[0.1em] text-signal">
+            {hero.eyebrow}
+          </p>
+          <h1 id="hero-title" className="mt-5 font-display text-[clamp(40px,min(5vw,7.6vh),78px)] font-bold leading-[0.96] tracking-[-0.045em]">
+            {hero.headline.map((line, i) => (
+              <span key={i} className="block">
+                {line.split(" ").map((w, j, arr) => (
+                  <span key={j} className="word-mask">
+                    <span data-hero-word className="word-inner">
+                      {w}
+                      {j < arr.length - 1 ? " " : ""}
+                    </span>
+                  </span>
+                ))}
+              </span>
+            ))}
+          </h1>
+          <p data-hero-bit data-intro-hide className="mt-6 max-w-[36rem] text-[clamp(16px,1.3vw,19px)] leading-relaxed text-soft-on-ink">
+            {hero.body}
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <span data-hero-bit data-intro-hide>
+              <AssessLink mode="personal" variant="signal" arrow>
+                {hero.primary}
+              </AssessLink>
+            </span>
+            <span data-hero-bit data-intro-hide>
+              <AssessLink mode="organisation" variant="ghost-paper">
+                {hero.secondary}
+              </AssessLink>
+            </span>
+          </div>
+          <p data-hero-bit data-intro-hide className="mt-5 text-[13px] text-muted-on-ink">
+            Free, about three minutes. Your answers stay in your browser.
+          </p>
+        </div>
+
+        {/* Chapters: copy alternates sides, the visual takes the other */}
+        <div id="story">
+          {chapters.map((c) => {
+            const align = ALIGN[c.id] ?? "left";
+            return (
+              <article
+                key={c.id}
+                data-block={c.id}
+                aria-labelledby={`ch-${c.id}`}
+                className={`flex flex-col justify-center py-16 [.story-scene_&]:h-[100svh] [.story-scene_&]:py-0 ${blockClass(align)}`}
+              >
+                <div data-flow-reveal className={copyClass(align)}>
+                  <p className="font-mono text-[13px] text-signal">
+                    {c.index} · {c.label}
+                  </p>
+                  <h2
+                    id={`ch-${c.id}`}
+                    className={`mt-4 font-display text-[clamp(32px,3.5vw,54px)] font-semibold leading-[1.02] tracking-[-0.035em] ${align === "center" ? "" : "max-w-[16ch]"}`}
+                  >
+                    {c.title}
+                  </h2>
+                  <p className={`mt-5 max-w-[30rem] text-[17px] leading-relaxed text-soft-on-ink ${align === "center" ? "mx-auto" : ""}`}>{c.body}</p>
+                  {c.id === "score" || c.id === "risks" || c.id === "actions" ? (
+                    <p className="mt-4 text-[13px] text-muted-on-ink">Figures shown are an example. Your real score comes from your own assessment.</p>
+                  ) : null}
+                </div>
+                <div data-flow-only data-flow-reveal className="mt-10">
+                  {c.id === "footprint" && <FootprintStatic />}
+                  {c.id === "assessment" && <AssessmentStatic />}
+                  {c.id === "score" && <ScoreStatic />}
+                  {c.id === "risks" && <RisksStatic />}
+                  {c.id === "actions" && <ActionsStatic />}
+                </div>
+              </article>
+            );
+          })}
+
+          {/* Closing call to action: centred beneath the orb */}
+          <div
+            data-block="cta"
+            className="flex flex-col items-center justify-center py-16 text-center [.story-scene_&]:h-[100svh] [.story-scene_&]:justify-end [.story-scene_&]:py-0 [.story-scene_&]:pb-[9vh]"
+          >
+            <div data-flow-reveal className="max-w-[640px]">
+              <p className="font-mono text-[13px] text-signal">06 · Your turn</p>
+              <h2 className="mt-4 font-display text-[clamp(34px,min(4.2vw,7vh),64px)] font-bold leading-[0.98] tracking-[-0.04em]">See where you really stand.</h2>
+              <p className="mx-auto mt-5 max-w-[30rem] text-[17px] leading-relaxed text-soft-on-ink">
+                Ten quick questions for you, or eight for your organisation. It&apos;s the first step of every Regulon training path.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <AssessLink mode="personal" variant="signal" arrow>
+                  {hero.primary}
+                </AssessLink>
+                <AssessLink mode="organisation" variant="ghost-paper">
+                  {hero.secondary}
+                </AssessLink>
+              </div>
             </div>
           </div>
         </div>

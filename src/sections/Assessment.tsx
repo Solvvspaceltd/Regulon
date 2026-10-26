@@ -119,7 +119,7 @@ export function Assessment() {
       id="assess"
       data-theme="dark"
       aria-labelledby="assess-title"
-      className="scroll-mt-[var(--header-h)] px-[var(--gutter)] py-[var(--section-y)] text-paper"
+      className="px-[var(--gutter)] py-[var(--section-y)] text-paper"
     >
       <div className="mx-auto grid max-w-[1240px] gap-10 rounded-[var(--radius-panel)] border border-paper/12 bg-ink-2/75 p-6 backdrop-blur-xl sm:p-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:p-14">
         {/* Intro column */}

@@ -14,8 +14,18 @@ export const company = {
 
 export const navLinks = [
   { id: "story", label: "How it works" },
+  { id: "platform", label: "Platform" },
+  { id: "plans", label: "Plans" },
   { id: "assess", label: "Check your security" },
+];
+
+/** Every section, for the footer and mobile menu. */
+export const allLinks = [
+  { id: "story", label: "How it works" },
+  { id: "assess", label: "Check your security" },
+  { id: "platform", label: "Platform" },
   { id: "products", label: "Products" },
+  { id: "plans", label: "Plans" },
   { id: "principles", label: "Principles" },
 ];
 
@@ -336,3 +346,142 @@ export const principles = [
     body: "An employer sees training results. Never your own messages, and never your family.",
   },
 ];
+
+/* ------------------------------------------------------------------ */
+/* Training path: the self-assessment is step one                      */
+/* ------------------------------------------------------------------ */
+
+export const journey = [
+  {
+    n: "01",
+    key: "assess",
+    title: "Assess",
+    body: "Every path starts with the self-assessment. It sets your baseline and decides what you learn first.",
+    points: ["Ten questions for you, eight for organisations", "An indicative score and your top fixes", "Retake it any time to see progress"],
+  },
+  {
+    n: "02",
+    key: "learn",
+    title: "Learn",
+    body: "Short, real stories about how scams actually unfolded, matched to your weakest areas.",
+    points: ["Minutes, not hours", "Tailored to your assessment", "Written for every age in a household"],
+  },
+  {
+    n: "03",
+    key: "practise",
+    title: "Practise",
+    body: "Disclosed drills in the channels scams really use. Everyone opts in before anything is sent.",
+    points: ["Email, text and call scenarios", "An instant explanation, never a telling-off", "Follow-up stories for anything missed"],
+  },
+  {
+    n: "04",
+    key: "certify",
+    title: "Certify",
+    body: "Finish a training path and earn a Regulon certificate, with your score to show for it.",
+    points: ["Personal and staff certificates", "Shareable, with your score and date", "Evidence for Cyber Essentials and funders"],
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/* Plans (DRAFT: contents to confirm, prices announced at launch)      */
+/* ------------------------------------------------------------------ */
+
+export type Tier = {
+  key: "bronze" | "silver" | "gold";
+  name: string;
+  /** Ring colour for the tier medal. */
+  metal: string;
+  title: string;
+  who: string;
+  inherits?: string;
+  features: string[];
+};
+
+export const plans: Record<"family" | "organisation", Tier[]> = {
+  family: [
+    {
+      key: "bronze",
+      name: "Bronze",
+      metal: "#c58a5a",
+      title: "Start",
+      who: "For one person getting started.",
+      features: [
+        "Self-assessment and personal score",
+        "Starter library of real scam stories",
+        "Check a text, number or link",
+        "Certificate when you complete a path",
+      ],
+    },
+    {
+      key: "silver",
+      name: "Silver",
+      metal: "#c9d2d8",
+      title: "Household",
+      who: "For the people you share a home with.",
+      inherits: "Everything in Bronze, plus",
+      features: [
+        "Up to [5] family members",
+        "The full story library, for every age",
+        "Disclosed practice drills",
+        "A household score, shared by choice",
+      ],
+    },
+    {
+      key: "gold",
+      name: "Gold",
+      metal: "#e8bd6a",
+      title: "Protected household",
+      who: "For families who want every layer.",
+      inherits: "Everything in Silver, plus",
+      features: [
+        "Alerts as new scams emerge",
+        "Family check-in word and call-back rules",
+        "Call and text filtering where your phone allows",
+        "Priority support",
+      ],
+    },
+  ],
+  organisation: [
+    {
+      key: "bronze",
+      name: "Bronze",
+      metal: "#c58a5a",
+      title: "Awareness",
+      who: "For small teams starting out.",
+      features: [
+        "Organisation self-assessment",
+        "Story-based training for every member of staff",
+        "Staff certificates on completion",
+        "A simple progress dashboard",
+      ],
+    },
+    {
+      key: "silver",
+      name: "Silver",
+      metal: "#c9d2d8",
+      title: "Simulate",
+      who: "For organisations ready to test, not just teach.",
+      inherits: "Everything in Bronze, plus",
+      features: [
+        "Disclosed phishing simulations in Microsoft 365",
+        "Human-risk score by team",
+        "Report-phish button in Outlook",
+        "Automatic follow-up training",
+      ],
+    },
+    {
+      key: "gold",
+      name: "Gold",
+      metal: "#e8bd6a",
+      title: "Govern",
+      who: "For organisations that answer to auditors and funders.",
+      inherits: "Everything in Silver, plus",
+      features: [
+        "Clocked for staff: text, chat and call scenarios",
+        "Response playbooks when scores drop",
+        "Cyber Essentials and funder-ready reports",
+        "Microsoft Entra ID sync and single sign-on",
+      ],
+    },
+  ],
+};

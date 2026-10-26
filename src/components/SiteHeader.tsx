@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
-import { navLinks } from "@/lib/content";
+import { allLinks, navLinks } from "@/lib/content";
+import { PlatformMenu } from "./PlatformMenu";
 import { RegulonWordmark } from "./Logo";
 import { MagneticButton } from "./MagneticButton";
 import { getLenis } from "./SmoothScroll";
@@ -138,6 +139,7 @@ export function SiteHeader() {
       <header
         ref={header}
         className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ease-[var(--ease-out-expo)] ${surface} ${text}`}
+        data-header
       >
         <div className="mx-auto flex h-[var(--header-h)] max-w-[1240px] items-center justify-between gap-4 px-[var(--gutter)]">
           <a href="#top" aria-label="Regulon, back to top" data-intro-hide data-nav>
@@ -147,6 +149,7 @@ export function SiteHeader() {
           <nav aria-label="Main" className="hidden items-center gap-8 text-[15px] lg:flex" data-intro-hide data-nav>
             {navLinks.map((l) => {
               const isActive = active === l.id;
+              if (l.id === "platform") return <PlatformMenu key={l.id} active={isActive} />;
               return (
                 <a
                   key={l.id}
@@ -203,12 +206,12 @@ export function SiteHeader() {
         className="fixed inset-0 z-40 bg-ink text-paper lg:hidden"
       >
         <nav aria-label="Mobile" className="flex h-full flex-col justify-center gap-2 px-[var(--gutter)] pt-[var(--header-h)]">
-          {navLinks.map((l, i) => (
+          {allLinks.map((l, i) => (
             <a
               key={l.id}
               href={`#${l.id}`}
               onClick={() => setOpen(false)}
-              className="flex items-baseline gap-4 border-b border-paper/10 py-4 font-display text-[clamp(32px,9vw,52px)] font-semibold tracking-[-0.03em]"
+              className="flex items-baseline gap-4 border-b border-paper/10 py-3.5 font-display text-[clamp(26px,7vw,42px)] font-semibold tracking-[-0.03em]"
             >
               <span className="font-mono text-[13px] text-signal">0{i + 1}</span>
               {l.label}

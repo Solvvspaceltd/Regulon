@@ -33,10 +33,30 @@ Single long-form page, built as one continuous interface. Every nav link is an i
 | — | Intro | — | First visit per session: the orb assembles, then glides into the hero (about 2.5 s, skippable) |
 | 01 | Hero | `#top` | "How exposed is your digital world?" with two entry points |
 | 02–06 | Story | `#story` | Footprint → assessment → score → risks → actions → call to action, one continuous visual |
-| 07 | Self-assessment | `#assess` | A real, short assessment: personal (10 questions) or organisation (8) |
-| 08 | Products | `#products` | Two doors: Clocked and Regulon |
-| 09 | Principles | `#principles` | Trust: disclosed drills, earned scores, personal stays personal |
-| 10 | Early access | `#join` | Conversion |
+| 07 | Self-assessment | `#assess` | Step one of every training path: personal (10 questions) or organisation (8) |
+| 08 | Platform | `#platform` | Assess → Learn → Practise → Certify, then the certificate |
+| 09 | Products | `#products` | Two doors: Clocked and Regulon |
+| 10 | Plans | `#plans` | Bronze, Silver, Gold for families and organisations (**draft contents, no prices yet**) |
+| 11 | Principles | `#principles` | Trust: disclosed drills, earned scores, personal stays personal |
+| 12 | Early access | `#join` | Conversion |
+
+**Layout rhythm.** Placement varies deliberately so the page never settles into a left-text, right-visual pattern.
+
+- Intro and hero: centred.
+- Story chapters:
+  - Footprint: copy left.
+  - Assessment: copy right.
+  - Score: centred.
+  - Risks: copy left.
+  - Actions: copy right.
+  - Closing: centred.
+- In each story chapter the orb and its visual travel to the opposite side of the copy.
+- Platform: centred heading over a stepped trail.
+- Certificate: visual left, copy right.
+- Plans: centred.
+- Principles: headline right-aligned.
+
+The header's **Platform** button opens a capability map (`src/components/PlatformMenu.tsx`).
 
 ## 2. Visual direction
 
@@ -155,6 +175,8 @@ Still to run on real devices:
 ## 9. Placeholders to replace
 
 - `[CONTACT EMAIL]` in `src/sections/SiteFooter.tsx`
+- Plan contents in `src/lib/content.ts` (`plans`), including the family member limit `[5]`, are a draft to confirm. Prices are intentionally absent.
+- Certificate details (path names, date, verification) once the training platform exists.
 - Full-resolution originals of the image pack (see "Swapping in the full-resolution image pack"). Confirm SolvvSpace holds a commercial licence for them.
 - Privacy notice link (footer). Write the notice before collecting emails.
 - App store links once Clocked is listed. They currently point to `#join`.
