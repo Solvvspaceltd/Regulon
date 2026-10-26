@@ -20,9 +20,22 @@ const errors: Record<string, string> = {
 };
 
 /**
+ * Where sign-ups go:
+ * - NEXT_PUBLIC_WAITLIST_URL set (static hosting such as GitHub Pages): the
+ *   browser posts straight to that webhook. It is sent as text/plain so the
+ *   browser makes a "simple" request with no CORS preflight; the webhook must
+ *   still return Access-Control-Allow-Origin for the result to be readable.
+ * - Otherwise, on a server host: the protected /api/waitlist route.
+ * - Static build with no webhook: sign-up is reported as not open yet,
+ *   without sending anything.
+ */
+const DIRECT_URL = process.env.NEXT_PUBLIC_WAITLIST_URL || "";
+const IS_STATIC = process.env.NEXT_PUBLIC_STATIC_SITE === "true";
+
+/**
  * 08 · Call to action
  * A real form with inline validation, a loading state, and honest success
- * and error feedback driven by the /api/waitlist response.
+ * and error feedback driven by the server's actual response.
  */
 export function Join() {
   const [audience, setAudience] = useState<Audience>("family");
@@ -40,13 +53,35 @@ export function Join() {
     setTouched(true);
     if (!EMAIL.test(email.trim())) return;
     const company = (new FormData(e.currentTarget).get("company") as string) ?? "";
+
+    if (IS_STATIC && !DIRECT_URL) {
+      setStatus({ kind: "error", message: errors.not_configured });
+      return;
+    }
+    // Honeypot filled: a bot. Show nothing different, send nothing.
+    if (company) {
+      setStatus({ kind: "success" });
+      return;
+    }
+
     setStatus({ kind: "sending" });
     try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, audience, company }),
-      });
+      const res = DIRECT_URL
+        ? await fetch(DIRECT_URL, {
+            method: "POST",
+            headers: { "content-type": "text/plain;charset=UTF-8" },
+            body: JSON.stringify({
+              email: email.trim().toLowerCase(),
+              audience,
+              source: "regulon-site",
+              at: new Date().toISOString(),
+            }),
+          })
+        : await fetch("/api/waitlist", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email, audience, company }),
+          });
       if (res.ok) {
         setStatus({ kind: "success" });
         return;
@@ -54,7 +89,10 @@ export function Join() {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       setStatus({ kind: "error", message: errors[data.error ?? ""] ?? errors.upstream_failed });
     } catch {
-      setStatus({ kind: "error", message: "You seem to be offline. Please check your connection and try again." });
+      setStatus({
+        kind: "error",
+        message: "We couldn't reach the sign-up service. Please check your connection and try again.",
+      });
     }
   }
 

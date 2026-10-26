@@ -192,12 +192,40 @@ Still to run on real devices before launch:
 
 ## 10. Deployment
 
-### Vercel (simplest)
+The same code deploys two ways. Nothing needs changing to move between them.
 
-1. Push the repo to GitHub.
-2. Import it at vercel.com/new. The defaults are correct for Next.js.
-3. Add `WAITLIST_WEBHOOK_URL` under Project → Settings → Environment Variables.
-4. Point your domain at it under Project → Domains.
+| | GitHub Pages (current) | Vercel Pro (later) |
+|---|---|---|
+| Build | Static export (`DEPLOY_TARGET=pages`) | Normal Next.js app |
+| Sign-up form | Browser posts to `WAITLIST_URL` | Server route `/api/waitlist` forwards to `WAITLIST_WEBHOOK_URL` |
+| Webhook URL | Visible in page source | Hidden on the server |
+| Deploys | `.github/workflows/pages.yml` on push to `main` | Vercel on push to `main` |
+
+### GitHub Pages (current)
+
+One-time setup:
+
+1. **Settings → General → Danger Zone → Change visibility → Public.** Pages is free on public repositories.
+2. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+3. Push to `main`, or run the workflow from the **Actions** tab. When it goes green, the site is at `https://solvvspaceltd.github.io/Regulon/`.
+
+The workflow:
+
+- installs with `npm ci`
+- drops the server-only `src/app/api` folder from the build
+- exports static files with the correct base path
+- publishes them
+
+**Custom domain later:** add it under Settings → Pages → Custom domain and set the DNS records GitHub shows you. The workflow reads the new base path from GitHub automatically, so the site moves from `/Regulon/` to the root without code changes. Tick **Enforce HTTPS** once the certificate is issued.
+
+### Vercel Pro (later)
+
+1. Import the repo at vercel.com/new. The defaults are correct.
+2. Add `WAITLIST_WEBHOOK_URL` under Project → Settings → Environment Variables.
+3. Add your domain under Project → Domains, and remove it from GitHub Pages.
+4. Delete `.github/workflows/pages.yml` or disable it, so the two hosts don't both deploy.
+
+Vercel's free Hobby plan is for non-commercial use only. This site needs Pro.
 
 ### Self-hosted (any Node 20+ host, Azure App Service, a container)
 
@@ -207,8 +235,31 @@ npm run build
 WAITLIST_WEBHOOK_URL=https://… npm run start   # serves on PORT (default 3000)
 ```
 
-Put it behind your usual reverse proxy and TLS.
+## 11. Sign-up form
 
-### Hooking up the form with Power Automate
+### On GitHub Pages
 
-Create a flow with the trigger **"When an HTTP request is received"**. Use this JSON schema: `email` (string), `audience` (string), `source` (string), `at` (string). Then add your action, for example adding a row to a SharePoint list or Excel table. Paste the flow's HTTP POST URL into `WAITLIST_WEBHOOK_URL`.
+The browser posts straight to your webhook. It sends `text/plain` containing JSON:
+
+```json
+{ "email": "…", "audience": "family | organisation", "source": "regulon-site", "at": "ISO date" }
+```
+
+Sending `text/plain` avoids a CORS preflight. The webhook must still reply with an `Access-Control-Allow-Origin` header, or the browser can't read the reply and the visitor sees an error, even though the data arrived.
+
+**Power Automate setup:**
+
+1. Trigger: **When an HTTP request is received**. Allow anyone to trigger it, because website visitors aren't signed in.
+2. **Parse JSON** on the request body, with the schema above. The body arrives as text; if Parse JSON rejects it, set Content to the expression `json(triggerBody())`.
+3. **Condition:** only continue if `email` contains `@` and `source` equals `regulon-site`. This is basic spam filtering, because the URL is public.
+4. Your action, for example adding a row to a SharePoint list.
+5. **Response**: status 200, with the header `Access-Control-Allow-Origin` set to `https://solvvspaceltd.github.io` (or your custom domain later).
+6. Copy the trigger's URL. In the repo, add it under **Settings → Secrets and variables → Actions → Variables → New variable**, named `WAITLIST_URL`. Re-run the workflow.
+
+Without `WAITLIST_URL`, the live form tells visitors sign-up isn't open yet and sends nothing.
+
+Test it end to end once it's live: submit your own email and check that the row appears and the page says "You're on the list".
+
+### On Vercel or a Node host
+
+Set `WAITLIST_WEBHOOK_URL` as a server environment variable. The `/api/waitlist` route validates the email, adds a honeypot check, and forwards it. The URL never reaches the browser, and no CORS header is needed.
