@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Design tokens
+   Colours, type, spacing, radii, shadows and motion live here so the
+   whole site can be re-themed from one place.
+   ------------------------------------------------------------------ */
+@theme {
+  /* Colour */
+  --color-ink: #0e1a22;
+  --color-ink-2: #16262f;
+  --color-ink-3: #2a3a45;
+  --color-paper: #f5f1e8;
+  --color-paper-2: #eae3d4;
+  --color-paper-3: #d9d1c0;
+  --color-body: #2e3a44;
+  --color-muted: #4a5560;
+  --color-muted-on-ink: #a9b6bf;
+  --color-soft-on-ink: #c9d2d8;
+  --color-signal: #f0a04b;
+  --color-signal-deep: #a3500f;
+
+  /* Type */
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* Radius */
+  --radius-card: 2rem;
+  --radius-panel: 2.25rem;
+
+  /* Shadow */
+  --shadow-lift: 0 30px 60px -20px rgb(14 26 34 / 0.35);
+  --shadow-float: 0 40px 80px rgb(0 0 0 / 0.45);
+
+  /* Motion (mirrors src/lib/motion.ts for CSS transitions) */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-micro: 180ms;
+  --duration-component: 600ms;
+}
+
+:root {
+  color-scheme: light;
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --section-y: clamp(5rem, 12vw, 9rem);
+  --header-h: 4.5rem;
+}
+
+html {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: var(--header-h);
+}
+
+body {
+  font-family: var(--font-sans);
+  overflow-x: clip;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-signal);
+  color: var(--color-ink);
+}
+
+/* Visible, consistent keyboard focus everywhere */
+:focus-visible {
+  outline: 3px solid var(--color-signal);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------
+   Hero load sequence guard.
+   The inline script in layout.tsx adds .motion-ready before first
+   paint when motion is allowed, so hero pieces start hidden and GSAP
+   reveals them. If the script bundle fails, the fallback animation
+   shows everything after 2.5s, so nothing stays hidden for good.
+   ------------------------------------------------------------------ */
+.motion-ready [data-hero-reveal] {
+  opacity: 0;
+  animation: hero-fallback 0.01s 2.5s forwards;
+}
+.motion-ready.hero-done [data-hero-reveal] {
+  animation: none;
+}
+@keyframes hero-fallback {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Masked word reveal helpers (AnimatedHeading) */
+.word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+.word-inner {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* Screen-reader only */
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes cue {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(200%);
+  }
+}
