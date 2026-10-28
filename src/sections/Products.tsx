@@ -8,6 +8,7 @@ import { AnimatedHeading } from "@/components/AnimatedHeading";
 import { InteractiveCard } from "@/components/InteractiveCard";
 import { MagneticButton } from "@/components/MagneticButton";
 import { ClockedMark, RegulonMark } from "@/components/Logo";
+import { app } from "@/lib/content";
 
 function Icon({ d, tone }: { d: string[]; tone: "deep" | "signal" }) {
   return (
@@ -36,6 +37,7 @@ const icons = {
   family: ["M9 11a3 3 0 100-6 3 3 0 000 6z", "M3 20c0-3 3-5 6-5s6 2 6 5", "M17 6v6", "M14 9h6"],
   mail: ["M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z", "M3 7l9 6 9-6"],
   chart: ["M4 20V10", "M10 20V4", "M16 20v-7", "M22 20H2"],
+  list: ["M9 6h11", "M9 12h11", "M9 18h11", "M4 6l1 1 2-2", "M4 12l1 1 2-2", "M4 18l1 1 2-2"],
   shield: ["M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z", "M9 12l2 2 4-4"],
 };
 
@@ -137,16 +139,19 @@ export function Products() {
                 For your organisation
               </h3>
               <p data-door-item className="text-[17px] leading-relaxed text-soft-on-ink">
-                Disclosed drills delivered through Microsoft 365, a human-risk score by team, and reports you can hand to
-                auditors and funders.
+                Your IT controls audit, completed online at your own pace and reviewed by SolvvSpace, with staff training
+                and certificates in the same place.
               </p>
               <ul className="flex flex-col gap-3.5 text-[16px]">
-                <li data-door-item className="flex gap-3"><Icon d={icons.mail} tone="signal" />Simulations in the inboxes people already use</li>
-                <li data-door-item className="flex gap-3"><Icon d={icons.chart} tone="signal" />A human-risk score by team, with response playbooks</li>
-                <li data-door-item className="flex gap-3"><Icon d={icons.shield} tone="signal" />Cyber Essentials and funder-ready reports</li>
+                <li data-door-item className="flex gap-3"><Icon d={icons.list} tone="signal" />The standard IT audit, section by section, saved as you go</li>
+                <li data-door-item className="flex gap-3"><Icon d={icons.chart} tone="signal" />Scored and reported back by SolvvSpace, with clear next steps</li>
+                <li data-door-item className="flex gap-3"><Icon d={icons.shield} tone="signal" />Staff courses with Bronze, Silver and Gold certificates</li>
               </ul>
-              <div data-door-item className="mt-auto pt-4">
-                <MagneticButton href="#join" variant="signal" arrow>
+              <div data-door-item className="mt-auto flex flex-wrap gap-3 pt-4">
+                <MagneticButton href={app.signIn} variant="signal" arrow>
+                  Open Regulon
+                </MagneticButton>
+                <MagneticButton href="#join" variant="ghost-paper">
                   Register for the pilot
                 </MagneticButton>
               </div>

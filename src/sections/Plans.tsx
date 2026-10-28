@@ -4,48 +4,35 @@ import { useRef, useState } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { mq } from "@/lib/motion";
 import { revealUp } from "@/lib/reveal";
-import { plans, type Tier } from "@/lib/content";
+import { app, plans, type Tier } from "@/lib/content";
 import { AnimatedHeading } from "@/components/AnimatedHeading";
 import { MagneticButton } from "@/components/MagneticButton";
-import { CheckIcon } from "@/components/StoryVisuals";
 
 type Audience = "family" | "organisation";
 
-function Medal({ tier }: { tier: Tier }) {
-  const c = 2 * Math.PI * 26;
-  const fill = tier.key === "bronze" ? 0.34 : tier.key === "silver" ? 0.67 : 1;
+const LEVEL = { bronze: 1, silver: 2, gold: 3 } as const;
+
+/** Level meter: three bars, lit up to the tier, like a signal-strength readout. */
+function Level({ tier }: { tier: Tier }) {
+  const lit = LEVEL[tier.key as keyof typeof LEVEL] ?? 1;
   return (
-    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
-      <defs>
-        <radialGradient id={`medal-${tier.key}`} cx="40%" cy="35%" r="70%">
-          <stop offset="0" stopColor="#1b2d38" />
-          <stop offset="1" stopColor="#05090c" />
-        </radialGradient>
-      </defs>
-      <circle cx="32" cy="32" r="21" fill={`url(#medal-${tier.key})`} stroke={tier.metal} strokeOpacity="0.5" strokeWidth="0.8" />
-      <circle cx="32" cy="32" r="26" fill="none" stroke="rgb(245 241 232 / 0.1)" strokeWidth="3" />
-      <circle
-        cx="32"
-        cy="32"
-        r="26"
-        fill="none"
-        stroke={tier.metal}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray={`${c * fill} ${c}`}
-        transform="rotate(-90 32 32)"
-      />
-      <text x="32" y="37" textAnchor="middle" fontFamily="var(--font-display)" fontWeight="700" fontSize="15" fill={tier.metal}>
-        {tier.name[0]}
-      </text>
-    </svg>
+    <span aria-hidden="true" className="flex items-end gap-[3px]">
+      {[1, 2, 3].map((n) => (
+        <span
+          key={n}
+          className="w-[5px] rounded-[1px]"
+          style={{ height: 6 + n * 5, background: n <= lit ? tier.metal : "rgb(245 241 232 / 0.14)" }}
+        />
+      ))}
+    </span>
   );
 }
 
 /**
  * 10 · Plans: Bronze, Silver and Gold, for families and organisations.
- * One glass panel split into three, each tier marked by a medal ring that
- * fills a little more at every level. Contents are a draft; prices are
+ * Three columns that rise out of the page: each panel lifts up from the
+ * bottom on reveal, is lit along its top edge in the tier's metal, and fades
+ * back into the background below its features. Contents are a draft; prices are
  * announced at launch, never invented here.
  */
 export function Plans() {
@@ -57,7 +44,19 @@ export function Plans() {
     () => {
       const mm = gsap.matchMedia();
       mm.add(mq.motion, () => {
-        revealUp(root.current!.querySelectorAll("[data-tier]"), root.current!.querySelector("[data-tiers]"), { distance: 40, stagger: 0.12 });
+        const tiersEl = root.current!.querySelector("[data-tiers]");
+        const st = { trigger: tiersEl as Element, start: "top 80%", once: true };
+        gsap.fromTo(
+          "[data-tier-panel]",
+          { clipPath: "inset(100% 0% 0% 0%)" },
+          { clipPath: "inset(0% 0% 0% 0%)", duration: 1.1, ease: "power3.out", stagger: 0.12, scrollTrigger: st },
+        );
+        gsap.fromTo(
+          "[data-tier-edge]",
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.9, ease: "power3.out", stagger: 0.12, delay: 0.55, scrollTrigger: st },
+        );
+        revealUp(root.current!.querySelectorAll("[data-tier-body]"), tiersEl, { distance: 28, stagger: 0.12, delay: 0.25 });
       });
       return () => mm.revert();
     },
@@ -97,56 +96,67 @@ export function Plans() {
           </div>
         </div>
 
-        <div
-          data-tiers
-          className="mt-14 grid overflow-hidden rounded-[var(--radius-panel)] border border-paper/12 bg-ink-2/70 backdrop-blur-xl lg:grid-cols-3"
-        >
-          {tiers.map((t, i) => (
-            <article
-              key={`${audience}-${t.key}`}
-              data-tier
-              aria-labelledby={`tier-${t.key}`}
-              className={`relative flex flex-col p-8 sm:p-10 ${i > 0 ? "border-t border-paper/10 lg:border-l lg:border-t-0" : ""} ${
-                t.key === "gold" ? "bg-[radial-gradient(ellipse_at_top,rgb(232_189_106/0.12),transparent_65%)]" : ""
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <Medal tier={t} />
-                <div>
-                  <p className="font-mono text-[12px] uppercase tracking-[0.14em]" style={{ color: t.metal }}>
-                    {t.name}
-                  </p>
-                  <h3 id={`tier-${t.key}`} className="font-display text-[26px] font-semibold tracking-[-0.02em]">
+        <div data-tiers className="mt-16 grid gap-5 lg:grid-cols-3 lg:gap-6">
+          {tiers.map((t) => {
+            const gold = t.key === "gold";
+            return (
+              <article key={`${audience}-${t.key}`} aria-labelledby={`tier-${t.key}`} className="relative flex flex-col px-7 pb-8 pt-9 sm:px-9">
+                {/* Panel: lit at the top, fading out below the features */}
+                <div
+                  data-tier-panel
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-t-[22px] border-x border-t border-paper/10 [mask-image:linear-gradient(to_bottom,#000_0%,#000_45%,transparent_100%)]"
+                  style={{
+                    background: `linear-gradient(to bottom, ${gold ? "rgb(232 189 106 / 0.13)" : "rgb(245 241 232 / 0.05)"} 0%, rgb(22 38 47 / 0.85) 28%, rgb(22 38 47 / 0.35) 75%, transparent 100%)`,
+                  }}
+                />
+                <span
+                  data-tier-edge
+                  aria-hidden="true"
+                  className="absolute inset-x-6 top-0 h-px origin-center"
+                  style={{ background: `linear-gradient(90deg, transparent, ${t.metal}, transparent)`, boxShadow: `0 0 18px ${t.metal}` }}
+                />
+
+                <div data-tier-body className="relative flex flex-1 flex-col">
+                  <div className="flex items-center justify-between">
+                    <p className="font-mono text-[12px] uppercase tracking-[0.2em]" style={{ color: t.metal }}>
+                      {t.name}
+                    </p>
+                    <Level tier={t} />
+                  </div>
+                  <h3 id={`tier-${t.key}`} className="mt-6 font-display text-[clamp(34px,3vw,44px)] font-bold leading-none tracking-[-0.035em]">
                     {t.title}
                   </h3>
-                </div>
-              </div>
-              <p className="mt-5 text-[15px] leading-relaxed text-soft-on-ink">{t.who}</p>
+                  <p className="mt-4 min-h-[3.2em] text-[15px] leading-relaxed text-soft-on-ink">{t.who}</p>
 
-              <div className="mt-6 border-t border-paper/10 pt-6">
-                {t.inherits ? <p className="mb-3 text-[13px] font-semibold text-muted-on-ink">{t.inherits}</p> : null}
-                <ul className="flex flex-col gap-3 text-[15px]">
-                  {t.features.map((f) => (
-                    <li key={f} className="flex gap-3">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: t.metal, color: "#0e1a22" }}>
-                        <CheckIcon />
-                      </span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                  {t.inherits ? (
+                    <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-on-ink">{t.inherits}</p>
+                  ) : (
+                    <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-on-ink">Includes</p>
+                  )}
+                  <ol className="mt-3 text-[15px]">
+                    {t.features.map((f, i) => (
+                      <li key={f} className="flex gap-4 border-t border-paper/[0.08] py-3 first:border-t-0">
+                        <span className="w-6 shrink-0 pt-[3px] font-mono text-[11px] tabular-nums" style={{ color: t.metal }}>
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className="leading-snug">{f}</span>
+                      </li>
+                    ))}
+                  </ol>
 
-              <div className="mt-auto pt-10">
-                <p className="text-[13px] text-muted-on-ink">Pricing announced at launch</p>
-                <div className="mt-3">
-                  <MagneticButton href="#join" variant={t.key === "gold" ? "signal" : "ghost-paper"} arrow>
-                    Join early access
-                  </MagneticButton>
+                  <div className="mt-auto pt-8">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-on-ink">Pricing announced at launch</p>
+                    <div className="mt-4">
+                      <MagneticButton href={audience === "organisation" ? app.signIn : "#join"} variant={gold ? "signal" : "ghost-paper"} arrow>
+                        {audience === "organisation" ? "Get started on Regulon" : "Join early access"}
+                      </MagneticButton>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

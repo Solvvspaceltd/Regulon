@@ -5,19 +5,32 @@ import { round, seeded } from "@/lib/seeded";
 export const ORB_ARC = round(2 * Math.PI * 46, 3);
 
 const rand = seeded(42);
-// Amber network inside the glass: points on a sphere-ish disc, linked to near neighbours.
-const POINTS = Array.from({ length: 34 }, () => {
-  const a = rand() * Math.PI * 2;
-  const r = Math.sqrt(rand()) * 33;
-  return { x: round(50 + Math.cos(a) * r), y: round(50 + Math.sin(a) * r * 0.92), s: round(0.35 + rand() * 0.9) };
-});
+// Sensor array inside the dial: nodes on a square lattice, joined by right-angle links.
+const STEP = 7;
+const POINTS: { x: number; y: number; s: number }[] = [];
+for (let gx = -4; gx <= 4; gx++) {
+  for (let gy = -4; gy <= 4; gy++) {
+    const x = 50 + gx * STEP;
+    const y = 50 + gy * STEP;
+    if (Math.hypot(x - 50, y - 50) > 30 || rand() < 0.35) continue;
+    POINTS.push({ x, y, s: round(0.45 + rand() * 0.7) });
+  }
+}
 const LINKS: [number, number][] = [];
 POINTS.forEach((p, i) => {
   POINTS.forEach((q, j) => {
     if (j <= i) return;
-    const d = Math.hypot(p.x - q.x, p.y - q.y);
-    if (d < 13 && LINKS.length < 60) LINKS.push([i, j]);
+    const adjacent = (p.x === q.x && Math.abs(p.y - q.y) === STEP) || (p.y === q.y && Math.abs(p.x - q.x) === STEP);
+    if (adjacent && rand() < 0.6) LINKS.push([i, j]);
   });
+});
+// Graduations around the dial, every 6 degrees, longer every 30.
+const GRADS = Array.from({ length: 60 }, (_, i) => {
+  const a = (i / 60) * Math.PI * 2;
+  const long = i % 5 === 0;
+  const r1 = 37.5;
+  const r2 = long ? 40.5 : 39;
+  return { x1: round(50 + Math.cos(a) * r1), y1: round(50 + Math.sin(a) * r1), x2: round(50 + Math.cos(a) * r2), y2: round(50 + Math.sin(a) * r2), long };
 });
 const DOTS = Array.from({ length: 12 }, (_, i) => {
   const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
@@ -34,8 +47,8 @@ type Props = {
 };
 
 /**
- * The Regulon orb: a glass sphere holding an amber network, wrapped in the
- * score arc. Purely presentational; motion is applied from outside through
+ * The Regulon dial: an instrument face with a sensor array, graduations and
+ * a crosshair, wrapped in the score arc. Purely presentational; motion is applied from outside through
  * the data-orb-* hooks, so the same element can move from the loader into
  * the hero and through every chapter without being recreated.
  */
@@ -50,24 +63,10 @@ export const Orb = forwardRef<HTMLDivElement, Props>(function Orb(
     <div ref={ref} className={`relative aspect-square ${className}`} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true}>
       <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full overflow-visible">
         <defs>
-          <radialGradient id={`orb-body-${u}`} cx="42%" cy="36%" r="70%">
-            <stop offset="0" stopColor="#1b2d38" />
-            <stop offset="0.55" stopColor="#0b161d" />
-            <stop offset="1" stopColor="#05090c" />
-          </radialGradient>
           <radialGradient id={`orb-glow-${u}`} cx="50%" cy="50%" r="50%">
             <stop offset="0.6" stopColor="#f0a04b" stopOpacity="0" />
             <stop offset="0.86" stopColor="#f0a04b" stopOpacity="0.12" />
             <stop offset="1" stopColor="#f0a04b" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id={`orb-rim-${u}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#f5f1e8" stopOpacity="0.55" />
-            <stop offset="0.45" stopColor="#c9d2d8" stopOpacity="0.08" />
-            <stop offset="1" stopColor="#f0a04b" stopOpacity="0.35" />
-          </linearGradient>
-          <radialGradient id={`orb-highlight-${u}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0" stopColor="#ffffff" stopOpacity="0.32" />
-            <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
           <clipPath id={`orb-clip-${u}`}>
             <circle cx="50" cy="50" r="37" />
@@ -77,10 +76,17 @@ export const Orb = forwardRef<HTMLDivElement, Props>(function Orb(
         {/* Outer glow */}
         <circle data-orb-glow cx="50" cy="50" r="58" fill={`url(#orb-glow-${u})`} />
 
-        {/* Glass body */}
+        {/* Instrument face */}
         <g data-orb-glass>
-          <circle cx="50" cy="50" r="37" fill={`url(#orb-body-${u})`} />
+          <circle cx="50" cy="50" r="37" fill="#0a141b" />
+          <circle cx="50" cy="50" r="37" fill="none" stroke="#c9d2d8" strokeOpacity="0.28" strokeWidth="0.4" />
+          <circle cx="50" cy="50" r="24" fill="none" stroke="#c9d2d8" strokeOpacity="0.1" strokeWidth="0.3" strokeDasharray="1 1.4" />
+          {GRADS.map((g, i) => (
+            <line key={i} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke="#c9d2d8" strokeOpacity={g.long ? 0.45 : 0.2} strokeWidth={g.long ? 0.45 : 0.3} />
+          ))}
           <g clipPath={`url(#orb-clip-${u})`}>
+            {/* Crosshair */}
+            <path d="M13 50H44M56 50H87M50 13V44M50 56V87" stroke="#c9d2d8" strokeOpacity="0.16" strokeWidth="0.3" />
             <g data-orb-net className="origin-center">
               {LINKS.map(([a, b], i) => (
                 <line
@@ -91,25 +97,15 @@ export const Orb = forwardRef<HTMLDivElement, Props>(function Orb(
                   x2={POINTS[b].x}
                   y2={POINTS[b].y}
                   stroke="#f0a04b"
-                  strokeOpacity="0.35"
-                  strokeWidth="0.18"
+                  strokeOpacity="0.4"
+                  strokeWidth="0.25"
                 />
               ))}
               {POINTS.map((p, i) => (
-                <circle key={i} data-orb-point cx={p.x} cy={p.y} r={p.s * 0.55} fill="#ffc77d" />
+                <rect key={i} data-orb-point x={p.x - p.s * 0.6} y={p.y - p.s * 0.6} width={p.s * 1.2} height={p.s * 1.2} fill="#ffc77d" />
               ))}
             </g>
-            {/* Silver swirl inside the glass */}
-            <path
-              d="M18 60 C 34 44, 52 70, 70 50 S 86 40, 92 46"
-              fill="none"
-              stroke="#c9d2d8"
-              strokeOpacity="0.22"
-              strokeWidth="0.5"
-            />
           </g>
-          <circle cx="50" cy="50" r="37" fill="none" stroke={`url(#orb-rim-${u})`} strokeWidth="0.6" />
-          <ellipse cx="38" cy="30" rx="15" ry="8" fill={`url(#orb-highlight-${u})`} transform="rotate(-28 38 30)" />
         </g>
 
         {/* Score arc */}

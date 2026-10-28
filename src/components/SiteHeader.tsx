@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
-import { allLinks, navLinks } from "@/lib/content";
+import { allLinks, app, navLinks } from "@/lib/content";
 import { PlatformMenu } from "./PlatformMenu";
 import { RegulonWordmark } from "./Logo";
 import { MagneticButton } from "./MagneticButton";
@@ -170,6 +170,12 @@ export function SiteHeader() {
           </nav>
 
           <div className="flex items-center gap-3" data-intro-hide data-nav>
+            <a
+              href={app.signIn}
+              className="hidden whitespace-nowrap py-2 text-[15px] font-semibold underline-offset-4 hover:underline md:inline-block"
+            >
+              Sign in
+            </a>
             <span className="hidden sm:inline-block">
               <MagneticButton href="#join" variant="signal">
                 Get early access
@@ -217,9 +223,12 @@ export function SiteHeader() {
               {l.label}
             </a>
           ))}
-          <div className="mt-8">
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <MagneticButton href="#join" onClick={() => setOpen(false)} arrow>
               Get early access
+            </MagneticButton>
+            <MagneticButton href={app.signIn} variant="ghost-paper">
+              Organisation sign in
             </MagneticButton>
           </div>
         </nav>

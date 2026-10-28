@@ -12,6 +12,16 @@ export const company = {
   year: 2026,
 };
 
+/**
+ * The Regulon platform for organisations. Set NEXT_PUBLIC_APP_URL at build
+ * time once it moves to its own domain (for example https://app.regulon.co.uk).
+ */
+const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://regulon-prod-web.livelymoss-d0005cec.uksouth.azurecontainerapps.io").replace(/\/$/, "");
+export const app = {
+  url: appUrl,
+  signIn: `${appUrl}/sign-in`,
+};
+
 export const navLinks = [
   { id: "story", label: "How it works" },
   { id: "platform", label: "Platform" },
@@ -31,7 +41,7 @@ export const allLinks = [
 
 export const hero = {
   eyebrow: "Human risk, measured",
-  headline: ["How exposed is", "your digital world?"],
+  headline: ["How exposed is your digital world?"],
   body: "Understand your digital security exposure, identify potential risks and take practical steps towards stronger protection.",
   primary: "Check My Security",
   secondary: "Assess My Organisation",
@@ -336,14 +346,17 @@ export const principles = [
   {
     title: "Every drill is disclosed.",
     body: "People opt in and know practice is coming. Trust is how the lesson lands.",
+    rule: "Opt-in recorded before any practice is sent",
   },
   {
     title: "Every score is earned.",
     body: "Scores come from real answers and real results, never from guesswork or a scare tactic.",
+    rule: "Calculated only from what you tell us and what you do",
   },
   {
     title: "Personal stays personal.",
     body: "An employer sees training results. Never your own messages, and never your family.",
+    rule: "Organisation views show training progress only",
   },
 ];
 

@@ -121,31 +121,43 @@ html.lenis body {
   overflow: hidden;
 }
 
-/* Backdrop life: drifting light trails and floating particles */
-.trail {
-  stroke-dasharray: 900 700;
-  animation: trail-drift 26s linear infinite;
+/* Backdrop life: signals travelling along circuit traces, and a slow scan line */
+.signal {
+  stroke-dashoffset: 0;
+  animation-name: signal-run;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
-@keyframes trail-drift {
+@keyframes signal-run {
   to {
-    stroke-dashoffset: -1600;
+    stroke-dashoffset: calc(var(--trace-len) * -1);
   }
 }
-.particle {
-  opacity: 0.55;
-  animation-name: particle-float;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  animation-direction: alternate;
+.scan {
+  opacity: 0.7;
+  animation: scan-sweep 14s linear infinite;
 }
-@keyframes particle-float {
+@keyframes scan-sweep {
   0% {
     transform: translate3d(0, 0, 0);
-    opacity: 0.25;
+    opacity: 0;
+  }
+  8%,
+  92% {
+    opacity: 0.7;
   }
   100% {
-    transform: translate3d(14px, -26px, 0);
-    opacity: 0.8;
+    transform: translate3d(0, 100vh, 0);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .signal,
+  .scan {
+    animation: none;
+  }
+  .scan {
+    display: none;
   }
 }
 

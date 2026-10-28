@@ -508,10 +508,19 @@ export function Story() {
           <div data-flow-only className="mb-10 flex justify-center">
             <Orb value={100} className="w-[min(64vw,300px)]" />
           </div>
-          <p data-hero-bit data-intro-hide className="font-mono text-[13px] uppercase tracking-[0.1em] text-signal">
+          <p
+            data-hero-bit
+            data-intro-hide
+            className="flex items-center gap-4 font-mono text-[clamp(15px,1.5vw,22px)] font-medium uppercase tracking-[0.22em] text-signal"
+          >
+            <span aria-hidden="true" className="h-px w-[clamp(28px,5vw,72px)] bg-gradient-to-r from-transparent to-signal" />
             {hero.eyebrow}
+            <span aria-hidden="true" className="h-px w-[clamp(28px,5vw,72px)] bg-gradient-to-l from-transparent to-signal" />
           </p>
-          <h1 id="hero-title" className="mt-5 font-display text-[clamp(40px,min(5vw,7.6vh),78px)] font-bold leading-[0.96] tracking-[-0.045em]">
+          <h1
+            id="hero-title"
+            className="mt-6 font-display text-[clamp(36px,min(4.3vw,7.6vh),68px)] font-bold leading-[1] tracking-[-0.045em] md:whitespace-nowrap"
+          >
             {hero.headline.map((line, i) => (
               <span key={i} className="block">
                 {line.split(" ").map((w, j, arr) => (
