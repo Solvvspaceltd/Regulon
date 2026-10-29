@@ -550,7 +550,7 @@ export function Story() {
             </span>
           </div>
           <p data-hero-bit data-intro-hide className="mt-5 text-[13px] text-muted-on-ink">
-            Free, about three minutes. Your answers stay in your browser.
+            Free, about three minutes. Your score appears straight away.
           </p>
         </div>
 
